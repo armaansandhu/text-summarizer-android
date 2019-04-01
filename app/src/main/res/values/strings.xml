@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Summarizer</string>
+    <string name="link_activity">Web Summarizer</string>
+    <string name="text_activity">Text Summarizer</string>
+    <string name="link_route">Web</string>
+    <string name="text_route">Text</string>
+</resources>
