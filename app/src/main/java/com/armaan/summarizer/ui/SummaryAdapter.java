@@ -63,9 +63,8 @@ public class SummaryAdapter extends RecyclerView.Adapter<SummaryAdapter.SummaryV
     }
 
     public Object sharedAnimation(View view,SummaryViewHolder holder){
-        Pair[] pairs = new Pair[2];
+        Pair[] pairs = new Pair[1];
         pairs[0] = new Pair(holder.titleText ,"summaryTitle");
-        pairs[1] = new Pair(holder.descriptionText,"summaryDescription");
         ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation((Activity) view.getContext(),pairs );
         return options.toBundle();
     }
