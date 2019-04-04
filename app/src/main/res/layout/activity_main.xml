@@ -55,6 +55,7 @@
             android:layout_marginRight="8dp"
             android:text="Summarize"
             android:textColor="#fff"
+            android:elevation="10dp"
             android:background="@drawable/summarize_btn"
             android:onClick="linkSummarize"
             app:layout_constraintEnd_toEndOf="parent"
