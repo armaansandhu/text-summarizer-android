@@ -6,11 +6,12 @@ public class Summary implements Serializable {
     String title;
     String text;
     String url;
-
-    public Summary(String title, String text,String url) {
+    String imageUrl;
+    public Summary(String title, String text,String url,String imageUrl) {
         this.title = title;
         this.text = text;
         this.url = url;
+        this.imageUrl = imageUrl;
     }
 
     public String getText() {
@@ -23,5 +24,9 @@ public class Summary implements Serializable {
 
     public String getUrl(){
         return url;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
     }
 }

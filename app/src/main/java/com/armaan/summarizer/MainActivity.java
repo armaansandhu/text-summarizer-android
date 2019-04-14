@@ -1,6 +1,8 @@
 package com.armaan.summarizer;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -16,6 +18,7 @@ import android.widget.ProgressBar;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.armaan.summarizer.models.Article;
@@ -24,6 +27,7 @@ import com.armaan.summarizer.models.Summary;
 import com.armaan.summarizer.retrofit.NewsApi;
 import com.armaan.summarizer.summarizer.SummaryTool;
 import com.armaan.summarizer.ui.NewsAdapter;
+import com.armaan.summarizer.utils.Utils;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -33,17 +37,6 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
-
-    void linkPage(View view){
-        Intent intent = new Intent(this,ThroughLink.class);
-        startActivity(intent);
-    }
-
-    void textPage(View view){
-        Intent intent = new Intent(this,ThroughText.class);
-        startActivity(intent);
-    }
-
     public void favourites(View view) {
         Intent intent = new Intent(this,FavouriteSummaries.class);
         startActivity(intent);
@@ -52,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     EditText urlInput;
     ProgressBar loadingSummary;
     RecyclerView listView;
+    Utils util;
 
     void linkSummarize(View view){
         loadingSummary.setVisibility(View.VISIBLE);
@@ -74,24 +68,24 @@ public class MainActivity extends AppCompatActivity {
         String title;
         String url;
         @Override
-        protected Summary doInBackground(String... strings) {
+        protected Summary doInBackground(String... strings){
             try {
-                Document doc = Jsoup.connect(strings[0]).get();
-                SummaryTool summaryTool = new SummaryTool();
-                summaryTool.init(doc.text());
-                summaryTool.extractSentenceFromContext();
-                summaryTool.groupSentencesIntoParagraphs();
-                summaryTool.createIntersectionMatrix();
-                summaryTool.createDictionary();
-                summaryTool.createSummary();
-                text = summaryTool.getSummary();
-                title = doc.title();
-                url = strings[0];
-                return new Summary(title,text,url);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
+            Document doc = Jsoup.connect(strings[0]).get();
+            SummaryTool summaryTool = new SummaryTool();
+            summaryTool.init(doc.text());
+            summaryTool.extractSentenceFromContext();
+            summaryTool.groupSentencesIntoParagraphs();
+            summaryTool.createIntersectionMatrix();
+            summaryTool.createDictionary();
+            summaryTool.createSummary();
+            text = summaryTool.getSummary().replaceAll("[^\\x00-\\x7f]+", "");;
+            title = doc.title();
+            url = strings[0];
+            return new Summary(title,text,url,null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
         }
 
         @Override
@@ -99,13 +93,7 @@ public class MainActivity extends AppCompatActivity {
             super.onPostExecute(s);
             loadingSummary.setVisibility(View.GONE);
             Intent intent = new Intent(getBaseContext(),SummaryActivity.class);
-            try {
-                String st = ObjectSerializer.serialize(s);
-                System.out.print(s.getText());
-                intent.putExtra("summaryText",st);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            intent.putExtra("summaryText",s);
             startActivity(intent);
         }
     }
@@ -115,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         listView = (RecyclerView) findViewById(R.id.newsRecyclerView);
+        firstRun();
         fetchArticles();
         setContentView(R.layout.activity_main);
         urlInput = (EditText) findViewById(R.id.urlInput);
@@ -148,6 +137,18 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    void firstRun(){
+        SharedPreferences preferences = this.getSharedPreferences("com.armaan.summarizer", Context.MODE_PRIVATE);
+        if(preferences.getString("first_run","") == null){
+            Utils utils = new Utils();
+            ArrayList<Summary> summaries = new ArrayList<Summary>();
+            preferences
+                    .edit()
+                    .putString("summaries", utils.serialize(summaries))
+                    .apply();
+        }
     }
 
 }

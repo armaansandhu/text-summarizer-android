@@ -91,6 +91,7 @@
         android:layout_marginBottom="44dp"
         android:onClick="favourites"
         android:background="@color/colorAccent"
+        android:src="@drawable/save"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.949"
