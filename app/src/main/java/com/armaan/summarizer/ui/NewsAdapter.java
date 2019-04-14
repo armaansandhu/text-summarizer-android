@@ -13,7 +13,6 @@ import android.widget.TextView;
 
 import com.armaan.summarizer.models.Article;
 import com.armaan.summarizer.models.Summary;
-import com.armaan.summarizer.ObjectSerializer;
 import com.armaan.summarizer.R;
 import com.armaan.summarizer.summarizer.SummaryTool;
 import com.armaan.summarizer.SummaryActivity;
@@ -29,18 +28,18 @@ import java.util.List;
 
 public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder> {
 
-    private Context mCtx;
+    private Context context;
     private List<Article> articles;
 
-    public NewsAdapter(Context mCtx, List<Article> articles) {
-        this.mCtx = mCtx;
+    public NewsAdapter(Context context, List<Article> articles) {
+        this.context = context;
         this.articles = articles;
     }
 
     @NonNull
     @Override
     public NewsViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        LayoutInflater inflater = LayoutInflater.from(mCtx);
+        LayoutInflater inflater = LayoutInflater.from(context);
         View view = inflater.inflate(R.layout.news_list,null);
         return new NewsViewHolder(view);
     }
@@ -55,7 +54,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
         newsViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new NewsUrlParser().execute(article.getUrl());
+                new NewsUrlParser().execute(article.getUrl(),article.getUrlToImage());
             }
         });
     }
@@ -74,7 +73,6 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
 
         public NewsViewHolder(@NonNull View itemView) {
             super(itemView);
-
             titleText = itemView.findViewById(R.id.newsListTitle);
             descriptionText = itemView.findViewById(R.id.newsListDescription);
             sourceText = itemView.findViewById(R.id.authorListText);
@@ -101,7 +99,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
                 text = summaryTool.getSummary().replaceAll("[^\\x00-\\x7f]+", "");
                 title = doc.title();
                 url = strings[0];
-                return new Summary(title,text,url);
+                return new Summary(title,text,url,strings[1]);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -111,15 +109,9 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
         @Override
         protected void onPostExecute(Summary s) {
             super.onPostExecute(s);
-            Intent intent = new Intent(mCtx, SummaryActivity.class);
-            try {
-                String st = ObjectSerializer.serialize(s);
-                System.out.print(s.getText());
-                intent.putExtra("summaryText",st);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mCtx.startActivity(intent);
+            Intent intent = new Intent(context, SummaryActivity.class);
+            intent.putExtra("summaryText",s);
+            context.startActivity(intent);
         }
     }
 }
