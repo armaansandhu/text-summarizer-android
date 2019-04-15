@@ -54,7 +54,10 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
         newsViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new NewsUrlParser().execute(article.getUrl(),article.getUrlToImage());
+                Intent intent = new Intent(context, SummaryActivity.class);
+                intent.putExtra("summaryText",article.getUrl());
+                intent.putExtra("image",article.getUrlToImage());
+                context.startActivity(intent);
             }
         });
     }
@@ -80,38 +83,4 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
         }
     }
 
-    class NewsUrlParser extends AsyncTask<String,Void,Summary> {
-        String text;
-        String title;
-        String url;
-        @Override
-        protected Summary doInBackground(String... strings) {
-            try {
-                Document doc = Jsoup.connect(strings[0]).get();
-                Elements images = doc.getElementsByClass("article-content");
-                SummaryTool summaryTool = new SummaryTool();
-                summaryTool.init(images.text());
-                summaryTool.extractSentenceFromContext();
-                summaryTool.groupSentencesIntoParagraphs();
-                summaryTool.createIntersectionMatrix();
-                summaryTool.createDictionary();
-                summaryTool.createSummary();
-                text = summaryTool.getSummary().replaceAll("[^\\x00-\\x7f]+", "");
-                title = doc.title();
-                url = strings[0];
-                return new Summary(title,text,url,strings[1]);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Summary s) {
-            super.onPostExecute(s);
-            Intent intent = new Intent(context, SummaryActivity.class);
-            intent.putExtra("summaryText",s);
-            context.startActivity(intent);
-        }
-    }
 }
