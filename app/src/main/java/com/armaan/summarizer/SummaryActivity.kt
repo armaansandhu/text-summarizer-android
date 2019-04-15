@@ -49,7 +49,10 @@ class SummaryActivity : AppCompatActivity() {
         summary = intent.getSerializableExtra("summaryText") as Summary
         this.summaryText.text = summary.text
         this.summaryTitle.text = summary.title
-        Picasso.get().load(summary.imageUrl).into(summaryImage);
+        if(summary.imageUrl != null)
+            Picasso.get().load(summary.imageUrl).into(summaryImage);
+        else
+            summaryImage.setVisibility(View.GONE)
         val summaries : ArrayList<Summary> = utils.deserialize(sharedPreferences.getString("summaries", ""))
         if(contains(summary,summaries) == true){
             favourite = true
