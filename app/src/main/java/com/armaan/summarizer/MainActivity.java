@@ -7,17 +7,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
-import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,9 +22,9 @@ import com.armaan.summarizer.models.Article;
 import com.armaan.summarizer.models.Articles;
 import com.armaan.summarizer.models.Summary;
 import com.armaan.summarizer.retrofit.NewsApi;
-import com.armaan.summarizer.summarizer.SummaryTool;
 import com.armaan.summarizer.ui.NewsAdapter;
 import com.armaan.summarizer.utils.Utils;
+import com.facebook.shimmer.ShimmerFrameLayout;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -43,73 +40,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     EditText urlInput;
-    ProgressBar loadingSummary;
     RecyclerView listView;
-    Utils util;
 
     void linkSummarize(View view){
-        loadingSummary.setVisibility(View.VISIBLE);
-        String url = formUrl(urlInput.getText().toString());
-        new UrlParser().execute(url);
-    }
-
-    String formUrl(String oldUrl){
-        if(oldUrl.contains("http://") || oldUrl.contains("https://")){
-            return oldUrl;
-        }
-        else{
-            oldUrl = "http://" + oldUrl;
-            return oldUrl;
-        }
-    }
-
-    public class UrlParser extends AsyncTask<String,Void,Summary>{
-        String text;
-        String title;
-        String url;
-        @Override
-        protected Summary doInBackground(String... strings){
-            try {
-            Document doc = Jsoup.connect(strings[0]).get();
-            SummaryTool summaryTool = new SummaryTool();
-            summaryTool.init(doc.text());
-            summaryTool.extractSentenceFromContext();
-            summaryTool.groupSentencesIntoParagraphs();
-            summaryTool.createIntersectionMatrix();
-            summaryTool.createDictionary();
-            summaryTool.createSummary();
-            text = summaryTool.getSummary().replaceAll("[^\\x00-\\x7f]+", "");;
-            title = doc.title();
-            url = strings[0];
-            return new Summary(title,text,url,null);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-        }
-
-        @Override
-        protected void onPostExecute(Summary s) {
-            super.onPostExecute(s);
-            loadingSummary.setVisibility(View.GONE);
+        String text = urlInput.getText().toString();
+        String url = extractUrls(text);
+        if(handleUrlError(url,this)) {
             Intent intent = new Intent(getBaseContext(),SummaryActivity.class);
-            intent.putExtra("summaryText",s);
+            intent.putExtra("summaryText",url);
             startActivity(intent);
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        listView = (RecyclerView) findViewById(R.id.newsRecyclerView);
-        firstRun();
-        fetchArticles();
-        setContentView(R.layout.activity_main);
-        urlInput = (EditText) findViewById(R.id.urlInput);
-        loadingSummary = (ProgressBar) findViewById(R.id.loadingSummary);
-        loadingSummary.setVisibility(View.GONE);
+    String extractUrls(String text){
+        String s = text;
+        if (text.isEmpty()) return "";
+        else if(!text.contains("http") || !text.contains(".")) return "NOT_URL";
+        else{
+            return text;
+        }
+    }
 
+    Boolean handleUrlError(String text, Context context){
+        if(text == ""){
+            Toast.makeText(getApplicationContext(),"URL cannot be empty!",Toast.LENGTH_LONG).show();
+            return false;
+        }
+        else if(text.equals("NOT_URL")){
+            Toast.makeText(getApplicationContext(),"Invalid Url",Toast.LENGTH_LONG).show();
+            return false;
+        }
+        return true;
     }
 
     void fetchArticles(){
@@ -125,9 +86,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Articles> call, Response<Articles> response) {
                 List<Article> articlesList = response.body().articles;
+                ShimmerFrameLayout shimmerFrameLayout = (ShimmerFrameLayout) findViewById(R.id.shimmer_view_container);
+                shimmerFrameLayout.setVisibility(View.GONE);
                 listView = (RecyclerView) findViewById(R.id.newsRecyclerView);
                 listView.setHasFixedSize(true);
                 listView.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+                listView.getLayoutManager().setMeasurementCacheEnabled(false);
                 NewsAdapter newsAdapter = new NewsAdapter(getApplicationContext(),articlesList);
                 listView.setAdapter(newsAdapter);
             }
@@ -150,5 +114,19 @@ public class MainActivity extends AppCompatActivity {
                     .apply();
         }
     }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        listView = (RecyclerView) findViewById(R.id.newsRecyclerView);
+        firstRun();
+        fetchArticles();
+        setContentView(R.layout.activity_main);
+        urlInput = (EditText) findViewById(R.id.urlInput);
+    }
+
 
 }
